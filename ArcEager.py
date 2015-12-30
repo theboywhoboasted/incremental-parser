@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 class NonProjectiveParseError(Exception):
+	""" To be raised if the sentence has a non-projective dependency
+		since Arc Eager can only process projective dependencies"""
 	def __init__(self, arg):
 		self.arg = arg
 	def __str__(self):
@@ -14,10 +16,12 @@ class ArcEagerState:
 		buffer contains the whole sentence,
 		index initialized to 0
 		arcs is empty
-		parent, label and children anre dicts with an element for each buffer item
+		parent, label and children are dicts with an element for each buffer item
 		log contains the list of (transition, feature set) (initially empty)
 		transitions contains the list of transitions (initially empty)
 		likelihood is the probability of parse initialized to 1
+		gold_trans is the number of times when the correct arc-shift was available
+		gold_trans is the number of times when the correct arc-shift was available with the right label
 		get_state is the function that generates features from state 
 		"""
 
