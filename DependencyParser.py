@@ -14,14 +14,13 @@ class IncorrectParseError(Exception):
 
 class DependencyParser:
 
-	def __init__(self, sentence, func):
+	def __init__(self, sentence):
 		""" initializes the state of the parser
 		buffer contains the sentence (this does not change through the parse)
 		func is the function that computes the features
 		tree is dict of nodes with value being the list of children
 		"""
 		self.buffer = sentence
-		self.func = func
 		self.tree = self.build_tree()
 
 	def build_tree(self):
@@ -45,7 +44,7 @@ class DependencyParser:
 	
 	def get_transitions(self):
 		""" gets list of transitions that would correspond to the parse """
-		partial_parse = ArcEagerState(self.buffer, self.func)
+		partial_parse = ArcEagerState(self.buffer)
 		partial_parse.tree = self.tree
 		while partial_parse.is_incomplete():
 			transition, label = partial_parse.next_transition_and_label()
@@ -58,7 +57,7 @@ class DependencyParser:
 		""" computes the greedy best parse using the predictions from oracle """
 		assert (k > 0)
 		partial_parses = []
-		partial_parses.append((1, 0, ArcEagerState(self.buffer, self.func)))
+		partial_parses.append((1, 0, ArcEagerState(self.buffer)))
 		max_buffer_index = 0
 		prev_likelihood = 1
 		surprisal = []
@@ -67,7 +66,7 @@ class DependencyParser:
 				new_parses = [(l,i,p) for l,i,p in partial_parses if p.index>max_buffer_index]
 				# print max_buffer_index, partial_parses[0][2].buffer[max_buffer_index]['form'], len(partial_parses), len(new_parses)
 				for likelihood, index, partial_parse in [(l,i,p) for l,i,p in partial_parses if p.index<=max_buffer_index]:
-					feature_lists = partial_parse.get_state(partial_parse).split()
+					feature_lists = partial_parse.get_state().split()
 					pred = oracle.predict(feature_lists)
 					# print "Pred", pred, feature_lists
 					norm_sum = 0
@@ -93,7 +92,7 @@ class DependencyParser:
 			partial_parses = partial_parses[:k]
 			new_likelihood = sum([l for l,_,_ in partial_parses])
 			# print max_buffer_index, len(partial_parses), self.buffer[max_buffer_index]['form'],-math.log(new_likelihood)/math.log(2.0)
-			# surprisal.append((max_buffer_index, self.buffer[max_buffer_index]['form'], self.buffer[max_buffer_index]['POS'], -math.log(new_likelihood)/math.log(2.0)))
+			surprisal.append((max_buffer_index, self.buffer[max_buffer_index]['form'], self.buffer[max_buffer_index]['POS'], -math.log(new_likelihood)/math.log(2.0)))
 			prev_likelihood = new_likelihood
 			# print partial_parses[0], new_likelihood
 			partial_parses = [((l/new_likelihood),i,p) for (l,i,p) in partial_parses]
@@ -116,5 +115,10 @@ class DependencyParser:
 		# print {x:partial_parse.parent[x]['index'] for x in partial_parse.parent if x!='0'}
 		# print {word['index']: word['parent'] for word in self.buffer}
 		# print partial_parse.label
-		return surprisal, partial_parse.parent, correct, total, gold_trans, correct_label
+		return {'surprisal': surprisal,
+				'parent': partial_parse.parent,
+				'correct': correct,
+				'total': total,
+				'gold_trans': gold_trans,
+				'correct_label': correct_label}
 

@@ -2,7 +2,7 @@
 
 from ArcEager import NonProjectiveParseError, ArcEagerState
 from DependencyParser import DependencyParser
-from features import construct_stacks, combined_feature
+# from features import construct_stacks, combined_feature
 from MaxEnt import MaxEnt
 import random
 
@@ -79,7 +79,7 @@ def train_from_file(ifile, file_type):
 				sentence.append(word)
 			else:
 				if sentence_index >= 0:
-					parser = DependencyParser(sentence, combined_feature)
+					parser = DependencyParser(sentence)
 					try:
 						log = parser.get_transitions()
 						dictionaries.append(log)
@@ -91,7 +91,7 @@ def train_from_file(ifile, file_type):
 				# break
 	return dictionaries, sentences
 
-def parse_dp(dp_file, wts_file, surp_file, k, num_sent=None):
+def parse_dp(dp_file, wts_file, surp_file, k, ofile, num_sent=None):
 	correct = 0
 	correct_label = 0
 	total = 0
@@ -99,33 +99,38 @@ def parse_dp(dp_file, wts_file, surp_file, k, num_sent=None):
 	maxent = MaxEnt(wts_file, len(ArcEagerState.transition_types))
 	with open(dp_file, 'r') as fr:
 		with open(surp_file, 'w') as fw:
-			sentence_index = 0
-			sentence = []
-			nonprojs = []
-			for line in fr.readlines()+['\n']:
-				split_line = line.split()
-				if len(split_line) == 10:
-					word = get_word_from_conll(split_line)
-					# print word
-					sentence.append(word)
-				else:
-					if sentence_index % 50 == 0:	print "Sent %s"%sentence_index
-					if sentence_index >= 0:
-						parser = DependencyParser(sentence, combined_feature)
-						parse = parser.best_parse(maxent,k)
-						correct += parse[2]
-						total += parse[3]
-						gold_trans += parse[4]
-						correct_label += parse[5]
-						for pair in parse[0]:
-							fw.write(' '.join([str(x) for x in pair]) + '\n')
-						fw.write('\n')
-					sentence_index += 1
-					sentence = []
-					if num_sent and (sentence_index >= num_sent): break
+			with open(ofile, 'w') as fo:
+				sentence_index = 0
+				sentence = []
+				nonprojs = []
+				for line in fr.readlines()+['\n']:
+					split_line = line.split()
+					if len(split_line) == 10:
+						word = get_word_from_conll(split_line)
+						sentence.append(word)
+					else:
+						if sentence_index % 50 == 0:	print "Sent %s"%sentence_index
+						if sentence_index >= 0:
+							parser = DependencyParser(sentence)
+							parse = parser.best_parse(maxent,k)
+							correct += parse['correct']
+							total += parse['total']
+							gold_trans += parse['gold_trans']
+							correct_label += parse['correct_label']
+							for pair in parse['surprisal']:
+								fw.write(' '.join([str(x) for x in pair]) + '\n')
+							fw.write('\n')
+							if len(sentence):
+								for w in sentence:
+									w['parent'] = parse['parent'][w['index']]['index']
+									fo.write(write_to_conll(w)+'\n')
+								fo.write('\n')
+						sentence_index += 1
+						sentence = []
+						if num_sent and (sentence_index >= num_sent): break
 	return correct, total, gold_trans, correct_label
 
-def save_whole(ofile, logs):
+def save_whole(ofile, logs, labelled, feature_set):
 	with open (ofile, 'w') as fw:
 		for transitions in logs:
 			for trans, state in transitions:
@@ -133,7 +138,9 @@ def save_whole(ofile, logs):
 				fw.write(' ' + state + '\n')
 		for tr in range(len(ArcEagerState.transition_types)):
 			fw.write(str(tr) + ' DUMMY_FEAT\n')
-	with open ('trans_' + ofile, 'w') as fw:
+	with open ('meta_' + ofile, 'w') as fw:
+		fw.write(labelled + '\n')
+		fw.write(feature_set + '\n')
 		for (transition, label) in ArcEagerState.transition_types:
 			fw.write(transition + ', ' + repr(label) + '\n')
 

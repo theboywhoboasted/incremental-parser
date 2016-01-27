@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import features
 
 class NonProjectiveParseError(Exception):
 	""" To be raised, when the sentence contains a NonProjective dependency 
@@ -11,7 +12,7 @@ class NonProjectiveParseError(Exception):
 class ArcEagerState:
 
 
-	def __init__(self, sentence, func):
+	def __init__(self, sentence):
 		""" initializes the state of the parser 
 		stack contains the root node,
 		buffer contains the whole sentence,
@@ -34,7 +35,7 @@ class ArcEagerState:
 						'feats': '',
 						'morph': {'chunkId':''}}]
 		self.buffer = sentence
-		self.get_state = lambda x: func(x.stack, x.buffer, x.arcs, x.index, x.parent, x.children, x.label)
+		# self.get_state = lambda x: func(x.stack, x.buffer, x.arcs, x.index, x.parent, x.children, x.label)
 		self.index = 0
 		self.arcs = []
 		self.parent = {word['index']: None for word in sentence}
@@ -53,6 +54,8 @@ class ArcEagerState:
 	# static variables
 	transition_types = [("SHIFT", None), ("REDUCE", None)]
 	transition_codes = {j:str(i) for (i,j) in enumerate(transition_types)}
+	state_func_name = None
+	labelled = False
 
 
 	def possible(self, transition):
@@ -110,6 +113,11 @@ class ArcEagerState:
 		self.label[child['index']] = label
 
 
+	def get_state(self):
+		features.initialise(self.stack, self.buffer, self.arcs, self.index, self.parent, self.children, self.label)
+		return features.FEATURE_DICT[ArcEagerState.state_func_name]()
+
+
 	def make_transition(self, transition, label=None, prob=-1):
 		""" given a transition with a probability, makes the transition to the parser state """
 
@@ -127,7 +135,8 @@ class ArcEagerState:
 
 		# log the transition being made with the feature set if the model is being trained
 		if prob == -1:
-			self.log.append(((transition, label),self.get_state(self)))
+			# features.initialise(self.stack, self.buffer, self.arcs, self.index, self.parent, self.children, self.label)
+			self.log.append(((transition, label), self.get_state()))
 		
 		# if the labeled transition does not exist in the present set, add it
 		if label:
@@ -156,16 +165,26 @@ class ArcEagerState:
 
 
 	@staticmethod
-	def recover_transitions(trans_file):
+	def recover_metadata(trans_file):
 		""" recovers the set of transitions from the trans_file """
 		transitions = []
 		with open(trans_file, 'r') as fr:
-			for line in fr.readlines():
+			
+			labelled = fr.readline().strip()
+			ArcEagerState.labelled = True if (labelled == 'LABELLED') else False
+			
+			features = fr.readline().strip()
+			ArcEagerState.state_func_name = features
+
+			line = fr.readline().strip()
+			while line:
 				words = line.strip().split(', ')
 				if (words[1].strip()[0] == "'") and (words[1].strip()[-1] == "'"):
 					transitions.append((words[0], words[1].split("'")[1]))
 				else:
 					transitions.append((words[0], None))
+				line = fr.readline().strip()
+		
 		ArcEagerState.transition_types = transitions
 		ArcEagerState.transition_codes = {j:str(i) for (i,j) in enumerate(ArcEagerState.transition_types)}
 		# print "there are", len(transitions), "transitions", transitions
