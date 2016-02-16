@@ -3,6 +3,7 @@ LEMMA = 'lemma'
 CPOSTAG = 'CPOS'
 POSTAG = 'POS'
 FEATS = 'feats'
+FEATS_WITHOUT_GNP = 'feats_without_gnp'
 DEPREL = 'deprel'
 	
 GENDER = 'gen'
@@ -26,7 +27,11 @@ def initialise(stack, buffer, arc, index, parent, children, label):
 	except IndexError:
 		Stack.append(None)
 	try:
-		Stack.append(stack[-2])
+		Stack.append(stack[-3])
+	except IndexError:
+		Stack.append(None)
+	try:
+		Stack.append(stack[-4])
 	except IndexError:
 		Stack.append(None)
 	Input = []
@@ -95,7 +100,7 @@ def rdep2(word):
 	except IndexError:
 		return None
 
-def combined_all_feature_labelled():
+def combined_all_features_labelled():
 	feature_set=[Split(InputColumn(FEATS, Stack[0]),'|'),
 			Split(InputColumn(FEATS, Input[0]),'|'),
 			InputColumn(FORM, Stack[0]),
@@ -125,7 +130,7 @@ def combined_all_feature_labelled():
 	split_feat = ['STACK0_FEAT_%s'%feat for feat in feature_set[0]] + ['INPUT0_FEAT_%s'%feat for feat in feature_set[1]]
 	return ' '.join(['FEAT_%d_%s'%(ind, val) for (ind, val) in enumerate(feature_set[2:])]) + ' '.join(split_feat)
 
-def combined_all_feature_unlabelled():
+def combined_all_features_unlabelled():
 	feature_set=[Split(InputColumn(FEATS, Stack[0]),'|'),
 			Split(InputColumn(FEATS, Input[0]),'|'),
 			InputColumn(FORM, Stack[0]),
@@ -152,7 +157,34 @@ def combined_all_feature_unlabelled():
 	split_feat = ['STACK0_FEAT_%s'%feat for feat in feature_set[0]] + ['INPUT0_FEAT_%s'%feat for feat in feature_set[1]]
 	return ' '.join(['FEAT_%d_%s'%(ind, val) for (ind, val) in enumerate(feature_set[2:])]) + ' '.join(split_feat)
 
-def combined_most_features():
+def combined_all_features_without_gnp():
+	feature_set=[Split(InputColumn(FEATS_WITHOUT_GNP, Stack[0]),'|'),
+			Split(InputColumn(FEATS_WITHOUT_GNP, Input[0]),'|'),
+			InputColumn(FORM, Stack[0]),
+			InputColumn(FORM, Input[0]),
+			InputColumn(POSTAG, Stack[0]),
+			InputColumn(POSTAG, Input[0]),
+			InputColumn(CHUNK_ID, Stack[0]),
+			InputColumn(CHUNK_ID, Input[0]),
+			InputColumn(POSTAG, Stack[1]),
+			InputColumn(POSTAG, pred(Stack[0])),
+			InputColumn(POSTAG, head(Stack[0])),
+			InputColumn(POSTAG, ldep(Input[0])),
+			InputColumn(CPOSTAG, Stack[0]),
+			InputColumn(CPOSTAG, Input[0]),
+			InputColumn(CPOSTAG, ldep(Input[0])),
+			InputColumn(FORM, ldep(Input[0])),
+			InputColumn(LEMMA, Stack[0]),
+			InputColumn(LEMMA, Input[0]),
+			Merge(InputColumn(CHUNK_ID, Stack[0]), InputColumn(CHUNK_ID, Input[0])),
+			Merge(InputColumn(CPOSTAG, Stack[0]), InputColumn(CPOSTAG, Input[0])),
+			Merge(InputColumn(POSTAG, Stack[0]), InputColumn(POSTAG, Input[0])),
+			]
+
+	split_feat = ['STACK0_FEAT_%s'%feat for feat in feature_set[0]] + ['INPUT0_FEAT_%s'%feat for feat in feature_set[1]]
+	return ' '.join(['FEAT_%d_%s'%(ind, val) for (ind, val) in enumerate(feature_set[2:])]) + ' '.join(split_feat)
+
+def combined_most_features_with_gnp():
 	feature_set=[Split(InputColumn(FEATS, Stack[0]),'|'),
 			Split(InputColumn(FEATS, Input[0]),'|'),
 			InputColumn(FORM, Stack[0]),
@@ -181,6 +213,47 @@ def combined_most_features():
 			InputColumn(GENDER, Input[0]),
 			InputColumn(PERSON, Stack[0]),
 			InputColumn(PERSON, Input[0]),
+			InputColumn(POSTAG, Stack[1]),
+			InputColumn(POSTAG, pred(Stack[0])),
+			InputColumn(POSTAG, head(Stack[0])),
+			InputColumn(POSTAG, ldep(Input[0])),
+			InputColumn(CPOSTAG, Stack[0]),
+			InputColumn(CPOSTAG, Input[0]),
+			InputColumn(CPOSTAG, ldep(Input[0])),
+			InputColumn(FORM, ldep(Input[0])),
+			InputColumn(LEMMA, Stack[0]),
+			InputColumn(LEMMA, Input[0]),
+			Merge(InputColumn(CHUNK_ID, Stack[0]), InputColumn(CHUNK_ID, Input[0])),
+			Merge(InputColumn(CPOSTAG, Stack[0]), InputColumn(CPOSTAG, Input[0])),
+			Merge(InputColumn(POSTAG, Stack[0]), InputColumn(POSTAG, Input[0])),
+			]
+
+	split_feat = ['STACK0_FEAT_%s'%feat for feat in feature_set[0]] + ['INPUT0_FEAT_%s'%feat for feat in feature_set[1]]
+	return ' '.join(['FEAT_%d_%s'%(ind, val) for (ind, val) in enumerate(feature_set[2:])]) + ' '.join(split_feat)
+
+def combined_most_features_without_gnp():
+	feature_set=[Split(InputColumn(FEATS, Stack[0]),'|'),
+			Split(InputColumn(FEATS, Input[0]),'|'),
+			InputColumn(FORM, Stack[0]),
+			InputColumn(FORM, Input[0]),
+			InputColumn(POSTAG, Stack[0]),
+			InputColumn(POSTAG, Input[0]),
+			InputColumn(CASE, Stack[0]),
+			InputColumn(CASE, Input[0]),
+			InputColumn(VIBHAKTI, Stack[0]),
+			InputColumn(VIBHAKTI, Input[0]),
+			InputColumn(TAM, Stack[0]),
+			InputColumn(TAM, Input[0]),
+			InputColumn(CHUNK_ID, Stack[0]),
+			InputColumn(CHUNK_ID, Input[0]),
+			InputColumn(CHUNK_ID, Stack[0]),
+			InputColumn(CHUNK_ID, Input[0]),
+			InputColumn(CHUNK_TYPE, Stack[0]),
+			InputColumn(CHUNK_TYPE, Input[0]),
+			InputColumn(STYPE, Stack[0]),
+			InputColumn(STYPE, Input[0]),
+			InputColumn(VOICETYPE, Stack[0]),
+			InputColumn(VOICETYPE, Input[0]),
 			InputColumn(POSTAG, Stack[1]),
 			InputColumn(POSTAG, pred(Stack[0])),
 			InputColumn(POSTAG, head(Stack[0])),
@@ -264,4 +337,7 @@ FEATURE_DICT = {'construct_stacks': construct_stacks,
 				'construct_stacks1': construct_stacks1,
 				'construct_stacks2': construct_stacks2,
 				'construct_stacks3': construct_stacks3,
-				'combined_most_features':	combined_most_features}
+				'combined_all_features_unlabelled':	combined_all_features_unlabelled,
+				'combined_all_features_without_gnp':	combined_all_features_without_gnp,
+				'combined_most_features_with_gnp':	combined_most_features_with_gnp,
+				'combined_most_features_without_gnp':	combined_most_features_without_gnp}

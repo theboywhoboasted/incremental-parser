@@ -61,14 +61,14 @@ class DependencyParser:
 		max_buffer_index = 0
 		prev_likelihood = 1
 		surprisal = []
+		word_form = ''
 		for max_buffer_index in range(len(self.buffer)):
+			word_form += self.buffer[max_buffer_index]['form']
 			while any([parse.index<=max_buffer_index for _,_,parse in partial_parses]):
 				new_parses = [(l,i,p) for l,i,p in partial_parses if p.index>max_buffer_index]
-				# print max_buffer_index, partial_parses[0][2].buffer[max_buffer_index]['form'], len(partial_parses), len(new_parses)
 				for likelihood, index, partial_parse in [(l,i,p) for l,i,p in partial_parses if p.index<=max_buffer_index]:
 					feature_lists = partial_parse.get_state().split()
 					pred = oracle.predict(feature_lists)
-					# print "Pred", pred, feature_lists
 					norm_sum = 0
 					for index in range(len(partial_parse.transition_types)):
 						if not partial_parse.possible(partial_parse.transition_types[index][0]):
@@ -80,23 +80,20 @@ class DependencyParser:
 					for prob, index in prob_vector:
 						transition, label = ArcEagerState.transition_types[index]
 						if partial_parse.possible(transition):
-							# print transition, label, prob
 							new_parse = deepcopy(partial_parse)
 							new_parse.likelihood = likelihood
-							# print new_parse.likelihood, pred[index]
 							new_parse.make_transition(transition, label, prob=prob)
-							# print new_parse.likelihood
 							new_parses.append((new_parse.likelihood,new_parse.index,new_parse))
 				new_parses.sort(reverse=True)
 				partial_parses = new_parses[:10*k]
-			partial_parses = partial_parses[:k]
-			new_likelihood = sum([l for l,_,_ in partial_parses])
-			# print max_buffer_index, len(partial_parses), self.buffer[max_buffer_index]['form'],-math.log(new_likelihood)/math.log(2.0)
-			surprisal.append((max_buffer_index, self.buffer[max_buffer_index]['form'], self.buffer[max_buffer_index]['POS'], -math.log(new_likelihood)/math.log(2.0)))
-			prev_likelihood = new_likelihood
-			# print partial_parses[0], new_likelihood
-			partial_parses = [((l/new_likelihood),i,p) for (l,i,p) in partial_parses]
-			# print partial_parses[0]
+			if not self.buffer[max_buffer_index].get('to_be_skipped', False):
+				partial_parses = partial_parses[:k]
+				new_likelihood = sum([l for l,_,_ in partial_parses])
+				surprisal.append((max_buffer_index+1, word_form, '%.5f'%(-math.log(new_likelihood)/math.log(2.0))))
+				prev_likelihood = new_likelihood
+				partial_parses = [((l/new_likelihood),i,p) for (l,i,p) in partial_parses]
+				word_form = ''
+				
 		correct = 0.0
 		correct_label = 0.0
 		total = 0.0

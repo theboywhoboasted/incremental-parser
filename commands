@@ -1,0 +1,56 @@
+./main.py process --dir ../data/temp/ --ifiles ../data/utf8.gold/train-htb-ver0.51.gold.utf8.conll ../data/utf8.gold/devel-htb-ver0.51.gold.utf8.conll --ofile gold.train.feats_co --file_type conll --feature_set combined_all_features_without_gnp
+
+./megam_i686.opt multiclass ../data/temp/gold.train.feats_co >../data/temp/wts_co
+
+./main.py surprisal --dp_file ../expt-data/hnd1_sents.conll ../expt-data/hnd1_sents.conll --ofile hnd1_3.conll hnd2_3.conll --meta_file ../data/temp/meta_gold.train.feats_co --surp_file hnd1_surp.txt hnd2_surp.txt --wts_file ../data/temp/wts_co --k 3
+
+./main.py surprisal --dp_file ../relative-clause/sents.conll --ofile ../relative-clause/parse.conll --meta_file ../data/temp/meta_gold.train.feats_co --surp_file  --wts_file ../data/temp/wts_co --k 3
+
+
+###################################################################################################
+
+Cross-validation accuracies
+
+
+
+./main.py process --dir ../data/temp/ --ifiles ../data/utf8.gold/train-htb-ver0.51.gold.utf8.conll ../data/utf8.gold/devel-htb-ver0.51.gold.utf8.conll --ofile gold.train.feats_co_gnp --file_type conll --feature_set combined_all_features_unlabelled --n 10
+
+
+./megam_i686.opt multiclass ../data/temp/0_train_gold.train.feats_co_gnp >../data/temp/wts_co_gnp0
+./megam_i686.opt multiclass ../data/temp/1_train_gold.train.feats_co_gnp >../data/temp/wts_co_gnp1
+./megam_i686.opt multiclass ../data/temp/2_train_gold.train.feats_co_gnp >../data/temp/wts_co_gnp2
+./megam_i686.opt multiclass ../data/temp/3_train_gold.train.feats_co_gnp >../data/temp/wts_co_gnp3
+./megam_i686.opt multiclass ../data/temp/4_train_gold.train.feats_co_gnp >../data/temp/wts_co_gnp4
+./megam_i686.opt multiclass ../data/temp/5_train_gold.train.feats_co_gnp >../data/temp/wts_co_gnp5
+./megam_i686.opt multiclass ../data/temp/6_train_gold.train.feats_co_gnp >../data/temp/wts_co_gnp6
+./megam_i686.opt multiclass ../data/temp/7_train_gold.train.feats_co_gnp >../data/temp/wts_co_gnp7
+./megam_i686.opt multiclass ../data/temp/8_train_gold.train.feats_co_gnp >../data/temp/wts_co_gnp8
+./megam_i686.opt multiclass ../data/temp/9_train_gold.train.feats_co_gnp >../data/temp/wts_co_gnp9
+
+./main.py surprisal --dp_file ../data/temp/0_dp_gold.train.feats_co_gnp ../data/temp/1_dp_gold.train.feats_co_gnp ../data/temp/2_dp_gold.train.feats_co_gnp ../data/temp/3_dp_gold.train.feats_co_gnp ../data/temp/4_dp_gold.train.feats_co_gnp ../data/temp/5_dp_gold.train.feats_co_gnp ../data/temp/6_dp_gold.train.feats_co_gnp ../data/temp/7_dp_gold.train.feats_co_gnp ../data/temp/8_dp_gold.train.feats_co_gnp ../data/temp/9_dp_gold.train.feats_co_gnp --ofile new_gnp_0.conll new_gnp_1.conll new_gnp_2.conll new_gnp_3.conll new_gnp_4.conll new_gnp_5.conll new_gnp_6.conll new_gnp_7.conll new_gnp_8.conll new_gnp_9.conll --meta_file ../data/temp/meta_gold.train.feats_co_gnp --surp_file s.txt s.txt s.txt s.txt s.txt s.txt s.txt s.txt s.txt s.txt --wts_file ../data/temp/wts_co_gnp0 ../data/temp/wts_co_gnp1 ../data/temp/wts_co_gnp2 ../data/temp/wts_co_gnp3 ../data/temp/wts_co_gnp4 ../data/temp/wts_co_gnp5 ../data/temp/wts_co_gnp6 ../data/temp/wts_co_gnp7 ../data/temp/wts_co_gnp8 ../data/temp/wts_co_gnp9 --k 1 --num_sent 100
+
+LAS = 87.17% for k=1
+LAS = 87.39% for k=2
+
+---------------------------------------------------------------------------------------------------
+
+./main.py process --dir ../data/temp/ --ifiles ../data/utf8.gold/train-htb-ver0.51.gold.utf8.conll ../data/utf8.gold/devel-htb-ver0.51.gold.utf8.conll --ofile gold.train.feats_co --file_type conll --feature_set combined_all_features_without_gnp --n 10
+
+
+./megam_i686.opt multiclass ../data/temp/0_train_gold.train.feats_co >../data/temp/wts_co0
+./megam_i686.opt multiclass ../data/temp/1_train_gold.train.feats_co >../data/temp/wts_co1
+./megam_i686.opt multiclass ../data/temp/2_train_gold.train.feats_co >../data/temp/wts_co2
+./megam_i686.opt multiclass ../data/temp/3_train_gold.train.feats_co >../data/temp/wts_co3
+./megam_i686.opt multiclass ../data/temp/4_train_gold.train.feats_co >../data/temp/wts_co4
+./megam_i686.opt multiclass ../data/temp/5_train_gold.train.feats_co >../data/temp/wts_co5
+./megam_i686.opt multiclass ../data/temp/6_train_gold.train.feats_co >../data/temp/wts_co6
+./megam_i686.opt multiclass ../data/temp/7_train_gold.train.feats_co >../data/temp/wts_co7
+./megam_i686.opt multiclass ../data/temp/8_train_gold.train.feats_co >../data/temp/wts_co8
+./megam_i686.opt multiclass ../data/temp/9_train_gold.train.feats_co >../data/temp/wts_co9
+
+./main.py surprisal --dp_file ../data/temp/0_dp_gold.train.feats_co ../data/temp/1_dp_gold.train.feats_co ../data/temp/2_dp_gold.train.feats_co ../data/temp/3_dp_gold.train.feats_co ../data/temp/4_dp_gold.train.feats_co ../data/temp/5_dp_gold.train.feats_co ../data/temp/6_dp_gold.train.feats_co ../data/temp/7_dp_gold.train.feats_co ../data/temp/8_dp_gold.train.feats_co ../data/temp/9_dp_gold.train.feats_co --ofile new_0.conll new_1.conll new_2.conll new_3.conll new_4.conll new_5.conll new_6.conll new_7.conll new_8.conll new_9.conll --meta_file ../data/temp/meta_gold.train.feats_co --surp_file s.txt s.txt s.txt s.txt s.txt s.txt s.txt s.txt s.txt s.txt --wts_file ../data/temp/wts_co0 ../data/temp/wts_co1 ../data/temp/wts_co2 ../data/temp/wts_co3 ../data/temp/wts_co4 ../data/temp/wts_co5 ../data/temp/wts_co6 ../data/temp/wts_co7 ../data/temp/wts_co8 ../data/temp/wts_co9 --k 1 --num_sent 100
+
+LAS = 88.00% for k=1
+LAS = 87.82% for k=2
+
+

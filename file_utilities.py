@@ -50,6 +50,10 @@ def get_word_from_conll(split_line):
 			'phead': split_line[8],
 			'pdeprel': split_line[9],
 			'morph': morph_dict}
+	if word['index'][0] == '-':
+		word['index'] = word['index'][1:]
+		word['to_be_skipped'] = True
+	word['feats_without_gnp'] = '|'.join([key+'-'+morph_dict[key] for key in morph_dict if key not in ['gen','num','pers']])
 	return word
 
 def write_to_conll(word):
@@ -101,12 +105,14 @@ def parse_dp(dp_file, wts_file, surp_file, k, ofile, num_sent=None):
 		with open(surp_file, 'w') as fw:
 			with open(ofile, 'w') as fo:
 				sentence_index = 0
+				fw.write('item\troi\tword\tsurprisal\n')
 				sentence = []
 				nonprojs = []
 				for line in fr.readlines()+['\n']:
 					split_line = line.split()
 					if len(split_line) == 10:
 						word = get_word_from_conll(split_line)
+						# print word['form'],
 						sentence.append(word)
 					else:
 						if sentence_index % 50 == 0:	print "Sent %s"%sentence_index
@@ -118,8 +124,7 @@ def parse_dp(dp_file, wts_file, surp_file, k, ofile, num_sent=None):
 							gold_trans += parse['gold_trans']
 							correct_label += parse['correct_label']
 							for pair in parse['surprisal']:
-								fw.write(' '.join([str(x) for x in pair]) + '\n')
-							fw.write('\n')
+								fw.write(str(sentence_index + 1) + '\t' + '\t'.join([str(x) for x in pair]) + '\n')
 							if len(sentence):
 								for w in sentence:
 									w['parent'] = parse['parent'][w['index']]['index']
