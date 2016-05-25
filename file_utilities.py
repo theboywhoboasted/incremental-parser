@@ -96,16 +96,21 @@ def train_from_file(ifile, file_type):
 	return dictionaries, sentences
 
 def parse_dp(dp_file, wts_file, surp_file, k, ofile, num_sent=None):
-	correct = 0
-	correct_label = 0
-	total = 0
-	gold_trans = 0.0
+	parse_stats = {'correct': 			0.0,
+				'total': 				0.0,
+				'correct_trans_avlbl': 	0.0,
+				'all_correct': 			0.0,
+				'all_correct_total': 	0.0,
+				'correct_label': 		0.0,
+				'sent_correct':			0.0,
+				'num_sents':			0.0
+				}
 	maxent = MaxEnt(wts_file, len(ArcEagerState.transition_types))
 	with open(dp_file, 'r') as fr:
 		with open(surp_file, 'w') as fw:
 			with open(ofile, 'w') as fo:
 				sentence_index = 0
-				fw.write('item\troi\tword\tsurprisal\n')
+				fw.write('item\troi\tword\tsurprisal\tretrieval\n')
 				sentence = []
 				nonprojs = []
 				for line in fr.readlines()+['\n']:
@@ -115,14 +120,15 @@ def parse_dp(dp_file, wts_file, surp_file, k, ofile, num_sent=None):
 						# print word['form'],
 						sentence.append(word)
 					else:
-						if sentence_index % 50 == 0:	print "Sent %s"%sentence_index
+						if sentence_index % 5 == 0:	print "Sent %s"%sentence_index
 						if sentence_index >= 0:
 							parser = DependencyParser(sentence)
 							parse = parser.best_parse(maxent,k)
-							correct += parse['correct']
-							total += parse['total']
-							gold_trans += parse['gold_trans']
-							correct_label += parse['correct_label']
+							for key in parse_stats:
+								if key in parse:
+									parse_stats[key] = parse_stats.get(key, 0) + parse[key]
+							parse_stats['num_sents'] += 1
+							parse_stats['sent_correct'] += 1 if (parse_stats['total'] - parse_stats['correct'] < 0.5) else 0
 							for pair in parse['surprisal']:
 								fw.write(str(sentence_index + 1) + '\t' + '\t'.join([str(x) for x in pair]) + '\n')
 							if len(sentence):
@@ -133,7 +139,7 @@ def parse_dp(dp_file, wts_file, surp_file, k, ofile, num_sent=None):
 						sentence_index += 1
 						sentence = []
 						if num_sent and (sentence_index >= num_sent): break
-	return correct, total, gold_trans, correct_label
+	return parse_stats
 
 def save_whole(ofile, logs, labelled, feature_set):
 	with open (ofile, 'w') as fw:

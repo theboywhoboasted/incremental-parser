@@ -56,14 +56,21 @@ if __name__ == "__main__":
 		
 		ArcEagerState.recover_metadata(args.meta_file)
 		for k in args.k:
-			correct, correct_label, total, gold_trans = 0,0,0,0
+			correct, correct_label, total, gold_trans, correct_trans_avlbl, all_correct, all_correct_total, correct_sents, num_sents = 0,0,0,0,0,0,0,0,0
 			for dp_file, wts_file, surp_file, ofile in zip(args.dp_file, args.wts_file, args.surp_file, args.ofile):
-				ct = parse_dp(dp_file, wts_file, surp_file, k, ofile, num_sent=args.num_sent)
-				correct += ct[0]
-				total += ct[1]
-				gold_trans += ct[2]
-				correct_label += ct[3]
-			print "UAS = %.2f%%, LAS = %.2f%% and gold transition availability = %.2f%% on %d tokens with k=%d"%(100.0*correct/total, 100.0*correct_label/total, 100.0*gold_trans/(total), total, k)	
+				stats = parse_dp(dp_file, wts_file, surp_file, k, ofile, num_sent=args.num_sent)
+				correct += stats['correct']
+				total += stats['total']
+				correct_trans_avlbl += stats['correct_trans_avlbl']
+				all_correct += stats['all_correct']
+				all_correct_total += stats['all_correct_total']
+				correct_label += stats['correct_label']
+				correct_sents += stats['sent_correct']
+				num_sents += stats['num_sents']
+			print "UAS = %.2f%%, LAS = %.2f%% on %d tokens"%(100.0*correct/total, 100.0*correct_label/total, total)
+			print "Sentence level accuracy = %.2f on %d sentences"%(100.0*correct_sents/num_sents, num_sents)
+			print "Gold transition availability = %.2f%%"%(100.0*correct_trans_avlbl/(total))
+			print "Gold parse availability = %.2f%% on %d truncations with k=%d"%(100.0*all_correct/all_correct_total, all_correct_total, k)	
 			print ""
 
 	

@@ -85,6 +85,13 @@ def ldep(word):
 		return Children[word['index']][0]
 	except IndexError:
 		return None
+def ldep2(word):
+	if not word:
+		return None
+	try:
+		return Children[word['index']][1]
+	except IndexError:
+		return None
 def rdep(word):
 	if not word:
 		return None
@@ -169,6 +176,35 @@ def combined_all_features_without_gnp():
 			InputColumn(POSTAG, Stack[1]),
 			InputColumn(POSTAG, pred(Stack[0])),
 			InputColumn(POSTAG, head(Stack[0])),
+			InputColumn(POSTAG, ldep(Input[0])),
+			InputColumn(CPOSTAG, Stack[0]),
+			InputColumn(CPOSTAG, Input[0]),
+			InputColumn(CPOSTAG, ldep(Input[0])),
+			InputColumn(FORM, ldep(Input[0])),
+			InputColumn(LEMMA, Stack[0]),
+			InputColumn(LEMMA, Input[0]),
+			Merge(InputColumn(CHUNK_ID, Stack[0]), InputColumn(CHUNK_ID, Input[0])),
+			Merge(InputColumn(CPOSTAG, Stack[0]), InputColumn(CPOSTAG, Input[0])),
+			Merge(InputColumn(POSTAG, Stack[0]), InputColumn(POSTAG, Input[0])),
+			]
+
+	split_feat = ['STACK0_FEAT_%s'%feat for feat in feature_set[0]] + ['INPUT0_FEAT_%s'%feat for feat in feature_set[1]]
+	return ' '.join(['FEAT_%d_%s'%(ind, val) for (ind, val) in enumerate(feature_set[2:])]) + ' '.join(split_feat)
+
+def transitive_without_gnp():
+	feature_set=[Split(InputColumn(FEATS_WITHOUT_GNP, Stack[0]),'|'),
+			Split(InputColumn(FEATS_WITHOUT_GNP, Input[0]),'|'),
+			InputColumn(FORM, Stack[0]),
+			InputColumn(FORM, Input[0]),
+			InputColumn(POSTAG, Stack[0]),
+			InputColumn(POSTAG, Input[0]),
+			InputColumn(CHUNK_ID, Stack[0]),
+			InputColumn(CHUNK_ID, Input[0]),
+			InputColumn(POSTAG, Stack[1]),
+			InputColumn(POSTAG, pred(Stack[0])),
+			InputColumn(POSTAG, head(Stack[0])),
+			InputColumn(POSTAG, ldep2(Input[0])),
+			OutputColumn(DEPREL, ldep2(Input[0])),
 			InputColumn(POSTAG, ldep(Input[0])),
 			InputColumn(CPOSTAG, Stack[0]),
 			InputColumn(CPOSTAG, Input[0]),
@@ -339,5 +375,6 @@ FEATURE_DICT = {'construct_stacks': construct_stacks,
 				'construct_stacks3': construct_stacks3,
 				'combined_all_features_unlabelled':	combined_all_features_unlabelled,
 				'combined_all_features_without_gnp':	combined_all_features_without_gnp,
+				'transitive_without_gnp':	combined_all_features_without_gnp,
 				'combined_most_features_with_gnp':	combined_most_features_with_gnp,
 				'combined_most_features_without_gnp':	combined_most_features_without_gnp}

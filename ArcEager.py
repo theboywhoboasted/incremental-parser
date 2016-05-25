@@ -1,5 +1,10 @@
 #!/usr/bin/python
+import numpy as np
 import features
+
+PRODCTN = 50.0
+READING = 1.0
+W = 1.0
 
 class NonProjectiveParseError(Exception):
 	""" To be raised, when the sentence contains a NonProjective dependency 
@@ -47,8 +52,11 @@ class ArcEagerState:
 		self.log = []
 		self.transitions = []
 		self.likelihood = 1
-		self.gold_trans = 0.0
+		self.all_correct = 1
+		self.gold_trans = []
 		self.gold_label = 0.0
+		self.decay_list = {wrd['index']: {'form': wrd['form'], 'times': [], 'fan': 0} for wrd in self.buffer}
+		self.time = 0.0
 
 
 	# static variables
@@ -118,25 +126,58 @@ class ArcEagerState:
 		return features.FEATURE_DICT[ArcEagerState.state_func_name]()
 
 
+	def get_retrieval(self):
+		if len(self.stack) == 1:
+			return 0
+		decay_item = self.decay_list[self.stack[-1]['index']]
+		assert(len(decay_item['times']) == 1)
+		time_sum = np.sum([(self.time + PRODCTN + READING - t)**(-0.5) for t in decay_item['times']])
+		fan = 1
+		def similar(x,y):
+			return (x==y)
+		for wrd in self.buffer[:self.index]:
+			if similar(wrd['POS'], self.buffer[self.index]['POS']):
+				fan += 1
+		wSji = W*(1.5 - np.log(fan))
+		return 100*0.14*np.exp(-(np.log(time_sum) + wSji)) if (fan > 0) else 0
+
+
 	def make_transition(self, transition, label=None, prob=-1):
 		""" given a transition with a probability, makes the transition to the parser state """
+
+		# print "old time: ", self.time
 
 		# see if a gold arc arc can be made and update gold_trans
 		try:
 			if self.stack[-1]['parent'] == self.buffer[self.index]['index']:
-				self.gold_trans += 1
+				self.gold_trans.append(self.stack[-1]['index'])
 			if self.stack[-1]['index'] == self.buffer[self.index]['parent']:
-				self.gold_trans += 1
+				self.gold_trans.append(self.buffer[self.index]['index'])
 		except IndexError:
 			pass
+
+		if self.all_correct == 1:
+			try:
+				gold_tr, gold_label = self.next_transition_and_label()
+				if gold_tr != transition:
+					self.all_correct = 0
+			except NonProjectiveParseError:
+				self.all_correct = 0
 
 		# check if the transition asked for is actually possible
 		assert self.possible(transition)
 
+		# print transition
+		# print self.buffer[self.index]['index'], self.stack[-1]['parent']
+		# print self.stack[-1]['index'], self.buffer[self.index]['parent']
 		# log the transition being made with the feature set if the model is being trained
 		if prob == -1:
-			# features.initialise(self.stack, self.buffer, self.arcs, self.index, self.parent, self.children, self.label)
 			self.log.append(((transition, label), self.get_state()))
+			activation = 0
+		else:
+			if transition in ['LEFT_ARC', 'RIGHT_ARC']:
+				activation = self.get_retrieval()
+			word_index = self.buffer[self.index]['index']
 		
 		# if the labeled transition does not exist in the present set, add it
 		if label:
@@ -147,21 +188,28 @@ class ArcEagerState:
 		# make the actual transition
 		if transition == 'SHIFT':
 			self.stack.append(self.buffer[self.index])
+			self.time += PRODCTN + READING
 			self.index += 1
 		elif transition == 'REDUCE':
 			self.stack.pop()
+			self.time += PRODCTN
 		elif transition == 'LEFT_ARC':
 			arc = (self.buffer[self.index], self.stack[-1])
 			self.make_arc(arc, label)
 			self.stack.pop()
+			self.time += PRODCTN + READING + activation + PRODCTN
 		elif transition == 'RIGHT_ARC':
 			arc = (self.stack[-1], self.buffer[self.index])
 			self.make_arc(arc, label)
 			self.stack.append(self.buffer[self.index])
+			self.time += PRODCTN + READING + activation + PRODCTN
 			self.index += 1
 		self.transitions.append(transition)
+		# print "new time: ", self.time
 		if prob > 0:
 			self.likelihood *= prob
+			if transition in ['SHIFT', 'RIGHT_ARC']:
+				self.decay_list[word_index]['times'].append(self.time)
 
 
 	@staticmethod
