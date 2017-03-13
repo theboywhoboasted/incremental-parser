@@ -2,6 +2,8 @@
 import numpy as np
 import features
 
+# weights needed in retrieval calculation
+# same as that in M. F. Boston et al. (2011)
 PRODCTN = 50.0
 READING = 1.0
 W = 1.0
@@ -39,27 +41,30 @@ class ArcEagerState:
 						'parent': 'NULL',
 						'feats': '',
 						'morph': {'chunkId':''}}]
-		self.buffer = sentence
+		self.buffer = sentence # stores the whole sentence
 		# self.get_state = lambda x: func(x.stack, x.buffer, x.arcs, x.index, x.parent, x.children, x.label)
-		self.index = 0
-		self.arcs = []
-		self.parent = {word['index']: None for word in sentence}
-		self.label = {word['index']: None for word in sentence}
-		self.parent['0'] = None
-		self.label['0'] = None
-		self.children = {word['index']: [] for word in sentence}
-		self.children['0'] = []
+		self.index = 0 # position in the sentence till which the parser has processed
+		self.arcs = [] # parse tree stored here in teh form of arcs
+		self.parent = {word['index']: None for word in sentence} # dictionary that stores parent of each node for which one has been found
+		self.label = {word['index']: None for word in sentence} # dictionary stores the label of the arc of an element with its parent
+		self.parent['0'] = None # boundary condition
+		self.label['0'] = None # boundary condition
+		self.children = {word['index']: [] for word in sentence} # dictionary that stores list of children for each node
+		self.children['0'] = [] # boundary condition
 		self.log = []
 		self.transitions = []
-		self.likelihood = 1
-		self.all_correct = 1
-		self.gold_trans = []
+		self.likelihood = 1 # stores likelihood of the parse = product of all transition probabilities
+		self.all_correct = 1 # boolean value; 1 if all arcs so far same as the actual parse
+		self.gold_trans = [] 
 		self.gold_label = 0.0
 		self.decay_list = {wrd['index']: {'form': wrd['form'], 'times': [], 'fan': 0} for wrd in self.buffer}
 		self.time = 0.0
 
 
 	# static variables
+	# Left and Right arcs with different labels are considered different transitions
+	# Since the names of labels are not known in advance, there are not added in the set of transition types
+	# New tranitions are added on the fly as we see them in trinign data
 	transition_types = [("SHIFT", None), ("REDUCE", None)]
 	transition_codes = {j:str(i) for (i,j) in enumerate(transition_types)}
 	state_func_name = None
